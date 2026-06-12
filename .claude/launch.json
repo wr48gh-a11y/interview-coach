@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "interview-coach",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8736"],
+      "port": 8736,
+      "autoPort": false
+    }
+  ]
+}

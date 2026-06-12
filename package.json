@@ -1,0 +1,10 @@
+{
+  "name": "google-interview-coach",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first Google interview coaching app. No build step — serve statically.",
+  "scripts": {
+    "start": "python3 -m http.server 8080"
+  }
+}
