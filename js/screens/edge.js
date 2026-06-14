@@ -27,7 +27,6 @@ export async function render(root) {
   const v = el(`<div class="edge-screen screen-enter">
     <div class="edge-top">
       <button class="iconbtn" id="back" title="Back">‹</button>
-      <span class="edge-count" id="count"></span>
       <button class="iconbtn" id="shuffle" title="Shuffle">⤮</button>
     </div>
     <div class="edge-stage" id="stage"></div>
@@ -35,11 +34,10 @@ export async function render(root) {
       <button class="btn quiet" id="prev">Previous</button>
       <button class="btn" id="next">Next card →</button>
     </div>
-    <p class="tiny edge-hint">Tap the card to flip to the next · ${EDGE_CARDS.length} cards from your real work</p>
+    <p class="tiny edge-hint">Tap the card to flip to the next · drawn from your real work</p>
   </div>`);
 
   const stage = v.querySelector('#stage');
-  const count = v.querySelector('#count');
 
   const paint = (dir = 1) => {
     const idx = order[pos];
@@ -53,7 +51,6 @@ export async function render(root) {
     node.style.animation = `edgeIn${dir > 0 ? '' : 'Back'} .32s cubic-bezier(.2,.9,.3,1.1)`;
     stage.innerHTML = '';
     stage.appendChild(node);
-    count.textContent = `${pos + 1} / ${order.length}`;
 
     node.onclick = e => { if (e.target.id !== 'star') go(1); };
     node.querySelector('#star').onclick = async (e) => {

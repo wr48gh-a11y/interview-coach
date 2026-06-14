@@ -26,6 +26,9 @@ export function cleanup() {
 }
 
 export async function render(root, params = {}) {
+  // Practice opens on a chooser: which kind of question to drill today.
+  if (params.pick) { pickerStage(root); return; }
+
   const ctx = await loadContext();
   const category = params.category || 'behavioral';
 
@@ -55,7 +58,7 @@ export async function render(root, params = {}) {
   const choice = (fresh.length ? fresh : pool)[Math.floor(Math.random() * (fresh.length ? fresh.length : pool.length))];
 
   if (choice) {
-    thinkStage(root, ctx, { category: choice.category, attribute: choice.attribute, question: choice.q, intent: '' });
+    thinkStage(root, ctx, { category: choice.category, attribute: choice.attribute, question: choice.q, intent: '', lock: !!params.lock });
     return;
   }
 
@@ -99,6 +102,36 @@ function failStage(root, msg, retry) {
   v.querySelector('#retry').onclick = retry;
 }
 
+/* ---------- practice picker ---------- */
+
+function pickerStage(root) {
+  const all = allQuestions();
+  const n = c => all.filter(x => x.category === c).length;
+  const opts = [
+    { cat: '', label: 'Mixed', sub: 'A bit of everything', count: all.length },
+    { cat: 'behavioral', label: 'Behavioral', sub: 'Tell me about a time…', count: n('behavioral') },
+    { cat: 'hypothetical', label: 'Hypothetical', sub: 'How would you handle…', count: n('hypothetical') },
+    { cat: 'opener', label: 'Opener', sub: 'Tell me about yourself · why Gemini', count: n('opener') },
+  ];
+  const v = stage(root, `
+    <span class="tiny" style="text-transform:uppercase;letter-spacing:.05em;font-weight:650">Practice</span>
+    <div class="session-q" style="margin-top:6px">What do you want to practice?</div>
+    <div class="pick-list">
+      ${opts.map(o => `<button class="pick-row" data-cat="${esc(o.cat)}">
+        <span class="pick-label">${esc(o.label)}</span>
+        <span class="pick-sub">${esc(o.sub)}</span>
+        <span class="pick-n">${o.count}</span>
+      </button>`).join('')}
+    </div>
+  `);
+  v.querySelectorAll('.pick-row').forEach(b => {
+    b.onclick = () => {
+      const cat = b.dataset.cat;
+      render(root, cat ? { category: cat, lock: true } : {});
+    };
+  });
+}
+
 /* ---------- think ---------- */
 
 function thinkStage(root, ctx, q) {
@@ -118,10 +151,7 @@ function thinkStage(root, ctx, q) {
   const v = stage(root, `
     ${drillBanner}
     <span class="tiny" style="text-transform:uppercase;letter-spacing:.05em;font-weight:650">${esc(CATEGORIES[q.category])}</span>
-    <div class="q-row">
-      <div class="session-q">${esc(q.question)}</div>
-      <button class="skip-arrow" id="skip-q" title="${story ? 'Skip — different question for this story' : 'Skip — give me a different question'}" aria-label="Different question">→</button>
-    </div>
+    <div class="session-q">${esc(q.question)}</div>
     ${peek}
     <div class="ring-wrap">
       <svg width="96" height="96" viewBox="0 0 96 96">
@@ -136,6 +166,7 @@ function thinkStage(root, ctx, q) {
       <button class="btn" id="now">Start answering now</button>
     </div>
     <button class="linkish" id="typed" style="margin-top:10px">Type your answer instead</button>
+    <button class="linkish" id="skip-q" style="margin-top:6px" title="${story ? 'Different question for this story' : 'A different question'}">Skip Question →</button>
   `);
 
   rec = new Recorder();
@@ -169,9 +200,12 @@ function thinkStage(root, ctx, q) {
   v.querySelector('#skip-q').onclick = () => {
     clears.forEach(fn => fn()); clears = [];
     rec?.dispose(); rec = null;
-    // Drill stays on the same story; ordinary Practice flips across the WHOLE
-    // bank (behavioral + hypothetical + openers), never locked to one type.
-    render(root, q.targetStoryId ? { targetStoryId: q.targetStoryId } : {});
+    // Drill stays on its story; a type-locked Practice stays in that type;
+    // a Mixed Practice flips across the WHOLE bank.
+    render(root,
+      q.targetStoryId ? { targetStoryId: q.targetStoryId }
+      : q.lock ? { category: q.category, lock: true }
+      : {});
   };
 }
 
@@ -313,6 +347,7 @@ async function gradeStage(root, ctx, q, ans) {
       targetStoryId: q.targetStoryId || null,
       storyLanded: q.targetStoryId ? (g.storyLanded || null) : null,
       storyNote: q.targetStoryId ? (g.storyNote || '') : '',
+      practiceMode: q.lock ? q.category : null,
       level: ctx.level,
       transcript: ans.transcript,
       durationSec: ans.durationSec,

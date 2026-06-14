@@ -129,7 +129,8 @@ export async function render(root, { id, fresh } = {}) {
 
   v.querySelector('#home').onclick = () => navigate('dashboard');
   v.querySelector('#retry').onclick = async () => navigate('session', await retryParamsFor(s.id));
-  v.querySelector('#next-q').onclick = () => navigate('session', {});
+  v.querySelector('#next-q').onclick = () =>
+    navigate('session', s.practiceMode ? { category: s.practiceMode, lock: true } : {});
   v.querySelector('#coach-btn').onclick = () => openCoach(s);
 
   getAudio(s.id).then(blob => {

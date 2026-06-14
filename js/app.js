@@ -55,6 +55,8 @@ async function ensureProfile() {
 function init() {
   document.getElementById('navSettings').onclick = () => navigate('settings');
   document.getElementById('navChip').onclick = () => navigate('settings');
+  document.getElementById('navHome').onclick = () => navigate('dashboard');
+  document.getElementById('navHomeBtn').onclick = () => navigate('dashboard');
 
   // Hannah's data spine is hardcoded — the only first-run step is a key.
   // If one already exists (or she's been here before), go straight to the

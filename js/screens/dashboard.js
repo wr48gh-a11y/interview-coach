@@ -9,7 +9,7 @@ import { PROFILE, ATTRIBUTES } from '../hannah.js';
 import { navigate } from '../app.js';
 
 const CARDS = [
-  { id: 'practice', go: () => navigate('session', {}), icon: '🎤', title: 'Practice', sub: 'One question, real feedback. Your everyday rep.' },
+  { id: 'practice', go: () => navigate('session', { pick: true }), icon: '🎤', title: 'Practice', sub: 'One question, real feedback. Your everyday rep.' },
   { id: 'mock', go: () => navigate('mock'), icon: '🎯', title: 'Full mock', sub: 'Six questions back-to-back, one readiness report.' },
   { id: 'edge', go: () => navigate('edge'), icon: '⚡️', title: 'Your edge', sub: 'Flip through your proof. Prime before the call.' },
   { id: 'gameplan', go: () => navigate('gameplan'), icon: '📋', title: 'Game plan', sub: 'North star, stories, the 7-day plan.' },
