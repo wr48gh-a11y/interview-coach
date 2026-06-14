@@ -129,7 +129,8 @@ Rules:
 - 150–220 words, as if spoken aloud in an interview — no bullet points, continuous prose.
 - For behavioral: tight STAR structure, end on a measurable result.
 - For hypothetical: clear framework, one concrete decision with trade-off, end on outcome.
-- Confident, first-person, specific.
+- Confident, first-person, specific. Write how a sharp person actually speaks — grounded and direct, not keynote-polished.
+- BANNED phrases (never use): "North Star", "passionate about", "move the needle", "leverage" (as verb), "synergize", "at the end of the day", "guiding principle", "I believe in", "my mission". Replace any abstraction with a concrete moment, name, or number.
 ${JSON_RULES}
 Shape: {"answer": string}`,
     user: `Question (${CATEGORIES[category]}): ${question}\n\nWrite the ideal spoken answer.`,
@@ -177,7 +178,7 @@ Shape: {
  "great": [exactly 3 of {"title": short, "detail": one sentence}],
  "errors": [exactly 3 of {"title": short, "detail": one actionable sentence, "tag": error tag}],
  "strengthTags": [up to 3 strength tags],
- "rewrite": a 150-220 word first-person rewrite of THEIR OWN answer as a 9/10 would sound — keep their true story, sharpen structure and specifics; if their materials contain a stronger relevant story, weave it in,
+ "rewrite": a 150-220 word first-person rewrite of THEIR OWN answer, sharpened — keep their true story, tighten the structure, make the result land harder. Write how a sharp, confident person actually speaks in a room: specific, grounded, no corporate clichés. BANNED phrases (never use): "North Star", "passionate about", "move the needle", "leverage" (as verb), "synergize", "at the end of the day", "guiding principle", "I believe in", "my mission". Replace abstractions with concrete moments — what actually happened, who was in the room, what the number was.
  "annotations": [2-4 of {"quote": EXACT substring copied verbatim from the transcript, "note": short margin note, "kind": "warn"|"good"}]
 }`,
     user: `${profileBlock(profile, roleFamily, level)}${materials}
