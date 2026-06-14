@@ -167,6 +167,8 @@ Sub-scores (0-10 integers):
 Error tags — pick ONLY from: ${Object.keys(ERROR_TAGS).join(', ')}
 Strength tags — pick ONLY from: ${Object.keys(STRENGTH_TAGS).join(', ')}
 
+CRITICAL rule for errors: judge ONLY what the candidate actually said in the transcript. Do NOT flag an error because you know from her background that she has stronger metrics, a better story, or more specific data she could have cited. Her choice of which story to tell is hers. Errors must be about HOW the answer was constructed — structure, clarity, whether the story she told had a result, relevance to the question, delivery — never about what proof points she left on the table.
+
 ${JSON_RULES}
 Shape: {
  "score": number 0-10 with one decimal,
