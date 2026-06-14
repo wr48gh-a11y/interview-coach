@@ -169,7 +169,9 @@ function thinkStage(root, ctx, q) {
   v.querySelector('#skip-q').onclick = () => {
     clears.forEach(fn => fn()); clears = [];
     rec?.dispose(); rec = null;
-    render(root, q.targetStoryId ? { targetStoryId: q.targetStoryId } : { category: q.category });
+    // Drill stays on the same story; ordinary Practice flips across the WHOLE
+    // bank (behavioral + hypothetical + openers), never locked to one type.
+    render(root, q.targetStoryId ? { targetStoryId: q.targetStoryId } : {});
   };
 }
 

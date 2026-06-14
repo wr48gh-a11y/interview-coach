@@ -7,6 +7,7 @@ export const CATEGORIES = {
   hypothetical: 'Hypothetical',
   googleyness: 'Googleyness & leadership',
   role: 'Role-related',
+  opener: 'Opener',
 };
 
 export const ROLE_FAMILIES = [
