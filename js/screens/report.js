@@ -102,7 +102,7 @@ export async function render(root, { id, fresh } = {}) {
     </div>
 
     <div class="glass card">
-      <h3>✨ Your answer, rewritten as a 9/10</h3>
+      <h3>✨ Your answer, sharpened</h3>
       <p class="rewrite" style="margin-top:10px">${esc(s.rewrite)}</p>
     </div>
 
