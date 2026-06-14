@@ -56,7 +56,11 @@ function init() {
   document.getElementById('navSettings').onclick = () => navigate('settings');
   document.getElementById('navChip').onclick = () => navigate('settings');
 
-  if (getSettings().onboarded) {
+  // Hannah's data spine is hardcoded — the only first-run step is a key.
+  // If one already exists (or she's been here before), go straight to the
+  // war room; otherwise show the single key gate.
+  const s = getSettings();
+  if (s.onboarded || s.anthropicKey || s.openaiKey) {
     navigate('dashboard');
     ensureProfile();
   } else {
