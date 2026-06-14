@@ -9,7 +9,7 @@ import { questionPrompts, gradePrompts, CATEGORIES } from '../prompts.js';
 import { materialsToText } from '../files.js';
 import { Recorder } from '../speech.js';
 import { navigate } from '../app.js';
-import { allQuestions, questionForStory, storyById } from '../hannah.js';
+import { allQuestions, questionForStory, storyById, PROFILE } from '../hannah.js';
 
 const THINK_SECONDS = 30;
 
@@ -76,14 +76,14 @@ export async function render(root, params = {}) {
 }
 
 async function loadContext() {
-  const profile = await getKV('profile');
-  const roleFamily = (await getKV('roleFamily')) || 'General business';
   const materials = await getKV('materials');
+  // Hannah's identity is fixed in hannah.js — never trust a stale JD-parsed
+  // profile (an old onboarding could have inferred L5 and saved it).
   return {
-    profile,
-    roleFamily,
+    profile: null,
+    roleFamily: PROFILE.role,
     materialsText: materialsToText(materials),
-    level: profile?.level || 'L6',
+    level: PROFILE.level,
   };
 }
 

@@ -6,7 +6,7 @@ import { el, esc, fmtClock, fmtDate, score1, toast } from '../ui.js';
 import { getSession, getSessions, getAudio, getKV } from '../store.js';
 import { chat, chatJSON } from '../llm.js';
 import { CATEGORIES, coachChatPrompts, idealAnswerPrompts } from '../prompts.js';
-import { storyById } from '../hannah.js';
+import { storyById, PROFILE } from '../hannah.js';
 import { navigate } from '../app.js';
 import { retryParamsFor } from './session.js';
 
@@ -149,8 +149,10 @@ export async function render(root, { id, fresh } = {}) {
 /* ---------- coach interstitial ---------- */
 
 async function openCoach(s) {
-  const profile = await getKV('profile');
-  const roleFamily = (await getKV('roleFamily')) || 'General business';
+  // Hannah is fixed L6 — ignore any stale JD-parsed profile/level.
+  const profile = null;
+  const roleFamily = PROFILE.role;
+  const level = PROFILE.level;
 
   const overlay = el(`<div class="coach-overlay">
     <div class="coach-modal glass">
@@ -192,7 +194,7 @@ async function openCoach(s) {
     const spinner = appendSpinner();
     try {
       const { system, user } = coachChatPrompts({
-        profile, roleFamily, level: s.level,
+        profile, roleFamily, level,
         question: s.question, category: s.category,
         transcript: s.transcript, score: s.score,
         subscores: s.subscores, errors: s.errors, great: s.great,
@@ -214,7 +216,7 @@ async function openCoach(s) {
     const spinner = appendSpinner();
     try {
       const { system, user } = idealAnswerPrompts({
-        profile, roleFamily, level: s.level,
+        profile, roleFamily, level,
         question: s.question, category: s.category,
       });
       const result = await chatJSON(system, user, { maxTokens: 1000 });
