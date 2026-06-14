@@ -78,6 +78,18 @@ function apiError(data, status) {
   return `Request failed (HTTP ${status}).`;
 }
 
+// Strip ASCII control characters (literal newlines/tabs inside JSON string
+// values are the most common reason a model's JSON fails to parse). Built
+// without a literal control-char regex so the source stays clean.
+function stripControlChars(s) {
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    out += code < 32 ? ' ' : s[i];
+  }
+  return out;
+}
+
 export function extractJSON(text) {
   const cleaned = String(text).replace(/```(?:json)?/gi, '');
   const start = cleaned.indexOf('{');
@@ -85,10 +97,27 @@ export function extractJSON(text) {
   if (start === -1 || end <= start) {
     throw new Error('The model returned an unexpected format — try again.');
   }
-  return JSON.parse(cleaned.slice(start, end + 1));
+  const slice = cleaned.slice(start, end + 1);
+  try {
+    return JSON.parse(slice);
+  } catch {
+    // Repair common breakages: control chars inside strings, trailing commas.
+    const repaired = stripControlChars(slice).replace(/,\s*([}\]])/g, '$1');
+    return JSON.parse(repaired);
+  }
 }
 
 export async function chatJSON(system, user, opts) {
   const text = await chat(system, user, opts);
-  return extractJSON(text);
+  try {
+    return extractJSON(text);
+  } catch {
+    // One strict retry — most parse failures clear on a second pass.
+    const retry = await chat(
+      system,
+      user + '\n\nIMPORTANT: Your previous reply was not valid JSON. Reply again with ONLY a single valid JSON object. Inside string values, use single quotes, never double quotes.',
+      opts,
+    );
+    return extractJSON(retry);
+  }
 }

@@ -1,0 +1,14 @@
+# OS / editor junk
+.DS_Store
+**/.DS_Store
+
+# Word/Office temp lock files
+~$*
+**/~$*
+
+# Netlify local state
+.netlify/
+
+# Hannah's raw personal prep documents — source only, not needed by the app,
+# and this repo is public. Her data lives in js/hannah.js (required at runtime).
+materials/

@@ -6,6 +6,7 @@ import { el, esc, fmtClock, fmtDate, score1, toast } from '../ui.js';
 import { getSession, getSessions, getAudio, getKV } from '../store.js';
 import { chat, chatJSON } from '../llm.js';
 import { CATEGORIES, coachChatPrompts, idealAnswerPrompts } from '../prompts.js';
+import { storyById } from '../hannah.js';
 import { navigate } from '../app.js';
 import { retryParamsFor } from './session.js';
 
@@ -30,6 +31,19 @@ export async function render(root, { id, fresh } = {}) {
       <span><b>${esc(it.title)}</b> — ${esc(it.detail)}</span>
     </div>`).join('');
 
+  const drillStory = s.targetStoryId ? storyById(s.targetStoryId) : null;
+  const landMap = {
+    yes: { cls: 'good', label: 'Story landed' },
+    partial: { cls: 'warn', label: 'Story half-landed' },
+    no: { cls: 'bad', label: 'Different story told' },
+  };
+  const land = drillStory && s.storyLanded ? landMap[s.storyLanded] : null;
+  const drillBlock = drillStory ? `<div class="report-drill">
+    <span class="drill-chip">⚡️ Story drill · ${esc(drillStory.title)}</span>
+    ${land ? `<span class="land-pill ${land.cls}">${land.label}</span>` : ''}
+    ${s.storyNote ? `<p class="muted" style="font-size:13px;margin-top:8px;width:100%">${esc(s.storyNote)}</p>` : ''}
+  </div>` : '';
+
   const delta = previous
     ? (s.score >= previous.score
       ? `<span class="delta up">▲ ${score1(s.score - previous.score)} vs your last attempt (${score1(previous.score)})</span>`
@@ -45,6 +59,7 @@ export async function render(root, { id, fresh } = {}) {
     </div>
 
     <div class="glass card">
+      ${drillBlock}
       <div class="score-hero">
         <div>
           <span class="score-big">${score1(s.score)}</span><span class="hero-denom"> /10</span>

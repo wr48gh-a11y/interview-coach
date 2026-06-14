@@ -4,13 +4,18 @@ import { getSettings, getKV, setKV } from './store.js';
 import { chatJSON } from './llm.js';
 import { jdPrompts } from './prompts.js';
 import { esc } from './ui.js';
+import { PROFILE } from './hannah.js';
 import * as onboarding from './screens/onboarding.js';
 import * as dashboard from './screens/dashboard.js';
 import * as session from './screens/session.js';
 import * as report from './screens/report.js';
 import * as settings from './screens/settings.js';
+import * as edge from './screens/edge.js';
+import * as gameplan from './screens/gameplan.js';
+import * as mock from './screens/mock.js';
+import * as warmup from './screens/warmup.js';
 
-const screens = { onboarding, dashboard, session, report, settings };
+const screens = { onboarding, dashboard, session, report, settings, edge, gameplan, mock, warmup };
 let current = null;
 
 export async function navigate(name, params = {}) {
@@ -30,13 +35,8 @@ export async function navigate(name, params = {}) {
 
 export async function refreshNav() {
   const chip = document.getElementById('navChip');
-  const profile = await getKV('profile');
-  const roleFamily = await getKV('roleFamily');
-  const label = profile
-    ? `🎯 ${profile.title || 'Target role'}${profile.level ? ' · ' + profile.level : ''}`
-    : (roleFamily ? `🎯 ${roleFamily} · general` : '');
-  chip.hidden = !label;
-  chip.innerHTML = esc(label);
+  chip.hidden = false;
+  chip.innerHTML = esc(`🎯 Gemini · ${PROFILE.level}`);
 }
 
 // If onboarding stored a posting but parsing failed (bad key, offline),

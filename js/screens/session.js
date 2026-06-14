@@ -9,6 +9,7 @@ import { questionPrompts, gradePrompts, CATEGORIES } from '../prompts.js';
 import { materialsToText } from '../files.js';
 import { Recorder } from '../speech.js';
 import { navigate } from '../app.js';
+import { allQuestions, questionForStory, storyById } from '../hannah.js';
 
 const THINK_SECONDS = 30;
 
@@ -33,12 +34,36 @@ export async function render(root, params = {}) {
     return;
   }
 
+  // Story Drill: pick a real question this story answers, and carry the story
+  // through so grading judges whether she actually deployed it.
+  if (params.targetStoryId) {
+    const past = (await getSessions()).map(s => s.question);
+    const m = questionForStory(params.targetStoryId, past);
+    if (m) {
+      thinkStage(root, ctx, { category: m.category, attribute: m.attribute, question: m.q, intent: '', targetStoryId: params.targetStoryId });
+      return;
+    }
+  }
+
+  // Pull from Hannah's real question bank first, avoiding ones she's already
+  // practiced. These are the proven questions from her workbook.
+  const past = (await getSessions()).map(s => s.question);
+  let pool = allQuestions();
+  if (params.attribute) pool = pool.filter(x => x.attribute === params.attribute);
+  if (params.category) pool = pool.filter(x => x.category === params.category);
+  const fresh = pool.filter(x => !past.includes(x.q));
+  const choice = (fresh.length ? fresh : pool)[Math.floor(Math.random() * (fresh.length ? fresh.length : pool.length))];
+
+  if (choice) {
+    thinkStage(root, ctx, { category: choice.category, attribute: choice.attribute, question: choice.q, intent: '' });
+    return;
+  }
+
+  // Fallback: generate one if the bank is somehow empty.
   stage(root, `<div class="spin"></div>
     <p class="muted" style="margin-top:16px">Writing your question…</p>
     <p class="tiny">${esc(CATEGORIES[category])} · calibrated to ${esc(ctx.level)}</p>`);
-
   try {
-    const past = (await getSessions()).map(s => s.question);
     const { system, user } = questionPrompts({ ...ctx, category, pastQuestions: past });
     const q = await chatJSON(system, user, { maxTokens: 1500 });
     thinkStage(root, ctx, { category, question: q.question, intent: q.intent });
@@ -78,12 +103,26 @@ function failStage(root, msg, retry) {
 
 function thinkStage(root, ctx, q) {
   const C = 2 * Math.PI * 44;
+  const story = q.targetStoryId ? storyById(q.targetStoryId) : null;
+  const drillBanner = story ? `
+    <div class="drill-banner">
+      <span class="drill-chip">⚡️ Story drill</span>
+      <span class="drill-aim">Land this story: <b>${esc(story.title)}</b></span>
+    </div>` : '';
+  const peek = story ? `
+    <details class="drill-peek">
+      <summary>Peek at your hook</summary>
+      <p class="drill-hook">${esc(story.hook)}</p>
+      <p class="drill-metric">${esc(story.metric)}</p>
+    </details>` : '';
   const v = stage(root, `
+    ${drillBanner}
     <span class="tiny" style="text-transform:uppercase;letter-spacing:.05em;font-weight:650">${esc(CATEGORIES[q.category])}</span>
     <div class="q-row">
       <div class="session-q">${esc(q.question)}</div>
-      <button class="skip-arrow" id="skip-q" title="Skip — give me a different question" aria-label="Different question">→</button>
+      <button class="skip-arrow" id="skip-q" title="${story ? 'Skip — different question for this story' : 'Skip — give me a different question'}" aria-label="Different question">→</button>
     </div>
+    ${peek}
     <div class="ring-wrap">
       <svg width="96" height="96" viewBox="0 0 96 96">
         <circle class="ring-track" cx="48" cy="48" r="44" fill="none" stroke-width="5"/>
@@ -130,7 +169,7 @@ function thinkStage(root, ctx, q) {
   v.querySelector('#skip-q').onclick = () => {
     clears.forEach(fn => fn()); clears = [];
     rec?.dispose(); rec = null;
-    render(root, { category: q.category });
+    render(root, q.targetStoryId ? { targetStoryId: q.targetStoryId } : { category: q.category });
   };
 }
 
@@ -257,6 +296,7 @@ async function gradeStage(root, ctx, q, ans) {
       durationSec: ans.durationSec,
       wpm,
       fillers,
+      targetStory: q.targetStoryId ? storyById(q.targetStoryId) : null,
     });
     const g = await chatJSON(system, user, { maxTokens: 6000 });
 
@@ -268,6 +308,9 @@ async function gradeStage(root, ctx, q, ans) {
       intent: q.intent || '',
       questionId: hashQuestion(q.question),
       retryOf: q.retryOf || null,
+      targetStoryId: q.targetStoryId || null,
+      storyLanded: q.targetStoryId ? (g.storyLanded || null) : null,
+      storyNote: q.targetStoryId ? (g.storyNote || '') : '',
       level: ctx.level,
       transcript: ans.transcript,
       durationSec: ans.durationSec,
@@ -307,5 +350,6 @@ export async function retryParamsFor(sessionId) {
     question: s.question,
     intent: s.intent,
     retryOf: s.id,
+    targetStoryId: s.targetStoryId || undefined,
   };
 }
