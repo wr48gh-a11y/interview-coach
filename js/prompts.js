@@ -149,7 +149,7 @@ Shape: {"score": number 0-10 one decimal, "verdict": one short encouraging sente
 
 export function gradePrompts({ profile, roleFamily, level, materialsText, question, category, transcript, durationSec, wpm, fillers, targetStory }) {
   const materials = materialsText
-    ? `\nThe candidate's own materials (resume/notes) — use them to judge whether they undersold real experience, and to make the rewrite draw on their strongest true stories:\n<<<\n${materialsText.slice(0, 12000)}\n>>>`
+    ? `\nThe candidate's own materials (resume/notes) — use ONLY for the rewrite, to help her tell her existing story more crisply. Do NOT use to flag errors or suggest she add new content.\n<<<\n${materialsText.slice(0, 12000)}\n>>>`
     : '';
   const drill = targetStory
     ? `\nSTORY DRILL: She is deliberately practicing deploying ONE specific story — "${targetStory.title}" (${targetStory.company}: ${targetStory.metric}). Judge whether she actually reached for THIS story and landed its metric. If she told a different story, that is not a failure of the answer, but note it. Add two fields to your JSON: "storyLanded": "yes" | "partial" | "no", and "storyNote": one short sentence on how well she deployed it and the metric.`
@@ -168,7 +168,7 @@ Sub-scores (0-10 integers):
 Error tags — pick ONLY from: ${Object.keys(ERROR_TAGS).join(', ')}
 Strength tags — pick ONLY from: ${Object.keys(STRENGTH_TAGS).join(', ')}
 
-CRITICAL rule for errors: judge ONLY what the candidate actually said in the transcript. Do NOT flag an error because you know from her background that she has stronger metrics, a better story, or more specific data she could have cited. Her choice of which story to tell is hers. Errors must be about HOW the answer was constructed — structure, clarity, whether the story she told had a result, relevance to the question, delivery — never about what proof points she left on the table.
+CRITICAL rule for errors: the candidate is in final interview prep — her stories are locked and she will not be adding new material. Errors must be pure coaching on HOW she delivered the answer she gave: structure, pacing, whether the result landed, clarity of ownership, relevance to the question, filler density. Do NOT suggest she change her story, add new proof points, bring in CV data, or find stronger metrics. If a stat felt light, you may note "the impact number felt thin" — but never suggest she go find a better one. No content changes. Coaching and delivery only.
 
 ${JSON_RULES}
 Shape: {

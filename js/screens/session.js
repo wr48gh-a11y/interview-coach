@@ -282,8 +282,22 @@ function recordStage(root, ctx, q) {
       typedStage(root, ctx, q, { blob, durationSec });
       return;
     }
-    gradeStage(root, ctx, q, { blob, transcript, durationSec });
+    reviewStage(root, ctx, q, { blob, transcript, durationSec });
   };
+}
+
+/* ---------- review (submit or retry) ---------- */
+
+function reviewStage(root, ctx, q, ans) {
+  const v = stage(root, `
+    <p class="session-intent" style="max-width:560px">${esc(q.question)}</p>
+    <div class="row" style="margin-top:28px">
+      <button class="btn quiet" id="retry">Record again</button>
+      <button class="btn" id="submit">Submit for grading</button>
+    </div>
+  `);
+  v.querySelector('#submit').onclick = () => gradeStage(root, ctx, q, ans);
+  v.querySelector('#retry').onclick = () => thinkStage(root, ctx, q);
 }
 
 /* ---------- typed fallback ---------- */
