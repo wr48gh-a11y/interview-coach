@@ -2,7 +2,7 @@
 // transcript + waveform) → LLM grading → report. Typed-answer fallback for
 // browsers without speech recognition or denied mic permission.
 
-import { el, esc, toast, fmtClock, countFillers, hashQuestion } from '../ui.js';
+import { el, esc, toast, fmtClock, countFillers, hashQuestion, showError } from '../ui.js';
 import { getKV, getSessions, getSession, saveSession, saveAudio, getSettings } from '../store.js';
 import { chatJSON } from '../llm.js';
 import { questionPrompts, gradePrompts, CATEGORIES } from '../prompts.js';
@@ -170,17 +170,19 @@ function thinkStage(root, ctx, q) {
   `);
 
   rec = new Recorder();
-  const micReady = rec.prepare().then(() => true).catch(() => false);
+  let micError = null;
+  const micReady = rec.prepare().then(() => true).catch(e => { micError = e; return false; });
 
   let t = THINK_SECONDS;
   const ring = v.querySelector('#ring');
   const num = v.querySelector('#num');
   const go = async () => {
     clears.forEach(fn => fn()); clears = [];
-    if (await micReady) recordStage(root, ctx, q);
+    if (await micReady) { recordStage(root, ctx, q); }
     else {
-      toast('Microphone unavailable — type your answer instead.', 'err');
-      typedStage(root, ctx, q);
+      showError(micError || { kind: 'mic-other' }, [
+        { id: 'type', label: 'Type my answer instead', fn: () => typedStage(root, ctx, q) },
+      ]);
     }
   };
 
@@ -386,8 +388,10 @@ async function gradeStage(root, ctx, q, ans) {
     if (ans.blob && ans.blob.size) await saveAudio(session.id, ans.blob);
     navigate('report', { id: session.id, fresh: true });
   } catch (e) {
-    failStage(root, `Grading failed: ${e.message}. Your answer is kept — try again.`,
-      () => gradeStage(root, ctx, q, ans));
+    showError(e, [
+      { id: 'retry', label: 'Try grading again', fn: () => gradeStage(root, ctx, q, ans) },
+      { id: 'home',  label: 'Back to dashboard',  fn: () => navigate('dashboard') },
+    ]);
   }
 }
 

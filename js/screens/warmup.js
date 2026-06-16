@@ -3,7 +3,7 @@
 // Deliberately the opposite of Practice: light, fast, reassuring. Nothing here
 // is saved — it's a ritual to get her voice going, not a scored rep.
 
-import { el, esc, toast, fmtClock } from '../ui.js';
+import { el, esc, toast, fmtClock, showError } from '../ui.js';
 import { getSettings } from '../store.js';
 import { chatJSON } from '../llm.js';
 import { warmupPrompts, CATEGORIES } from '../prompts.js';
@@ -91,15 +91,20 @@ function thinkStage(root, qs, i, reads) {
   `);
 
   rec = new Recorder();
-  const micReady = rec.prepare().then(() => true).catch(() => false);
+  let micErr = null;
+  const micReady = rec.prepare().then(() => true).catch(e => { micErr = e; return false; });
 
   let t = THINK_SECONDS;
   const ring = v.querySelector('#ring');
   const num = v.querySelector('#num');
   const go = async () => {
     clears.forEach(fn => fn()); clears = [];
-    if (await micReady) recordStage(root, qs, i, reads);
-    else { toast('Microphone unavailable — type your answer instead.', 'err'); typedStage(root, qs, i, reads); }
+    if (await micReady) { recordStage(root, qs, i, reads); }
+    else {
+      showError(micErr || { kind: 'mic-other' }, [
+        { id: 'type', label: 'Type my answer instead', fn: () => typedStage(root, qs, i, reads) },
+      ]);
+    }
   };
 
   every(() => {

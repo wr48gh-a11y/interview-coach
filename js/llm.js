@@ -10,10 +10,17 @@ export async function chat(system, user, { maxTokens = 4096 } = {}) {
   const s = getSettings();
   const provider = s.provider || 'anthropic';
   const key = provider === 'openai' ? s.openaiKey : s.anthropicKey;
-  if (!key) throw new Error(`No ${provider === 'openai' ? 'ChatGPT' : 'Claude'} API key. Add one in Settings.`);
-  return provider === 'openai'
-    ? openaiChat(key, system, user, maxTokens)
-    : anthropicChat(key, system, user, maxTokens);
+  if (!key) { const e = new Error('No API key. Add one in Settings.'); e.kind = 'no-key'; throw e; }
+  try {
+    return await (provider === 'openai'
+      ? openaiChat(key, system, user, maxTokens)
+      : anthropicChat(key, system, user, maxTokens));
+  } catch (e) {
+    if (!e.kind && (e instanceof TypeError || e.message?.includes('fetch'))) {
+      e.kind = 'network';
+    }
+    throw e;
+  }
 }
 
 async function anthropicChat(key, system, user, maxTokens) {
@@ -34,7 +41,7 @@ async function anthropicChat(key, system, user, maxTokens) {
     }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(apiError(data, res.status));
+  if (!res.ok) throw apiError(data, res.status);
   return (data.content || [])
     .filter(b => b.type === 'text')
     .map(b => b.text)
@@ -57,7 +64,7 @@ async function openaiChat(key, system, user, maxTokens) {
     }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(apiError(data, res.status));
+  if (!res.ok) throw apiError(data, res.status);
   if (typeof data.output_text === 'string' && data.output_text) return data.output_text;
   const parts = [];
   for (const item of data.output || []) {
@@ -72,10 +79,15 @@ async function openaiChat(key, system, user, maxTokens) {
 
 function apiError(data, status) {
   const msg = data?.error?.message || data?.message;
-  if (msg) return msg;
-  if (status === 401) return 'API key was rejected. Check it in Settings.';
-  if (status === 429) return 'Rate limited by the provider — wait a moment and try again.';
-  return `Request failed (HTTP ${status}).`;
+  const kind = !status ? 'network'
+    : status === 401 ? 'bad-key'
+    : status === 402 ? 'billing'
+    : status === 429 ? 'rate-limit'
+    : status >= 500  ? 'server-error'
+    : 'server-error';
+  const e = new Error(msg || (status ? `Request failed (HTTP ${status}).` : 'No internet connection.'));
+  e.kind = kind;
+  return e;
 }
 
 // Strip ASCII control characters (literal newlines/tabs inside JSON string
@@ -95,7 +107,9 @@ export function extractJSON(text) {
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
   if (start === -1 || end <= start) {
-    throw new Error('The model returned an unexpected format — try again.');
+    const e = new Error('The model returned an unexpected format — try again.');
+    e.kind = 'parse';
+    throw e;
   }
   const slice = cleaned.slice(start, end + 1);
   try {

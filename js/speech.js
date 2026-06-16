@@ -12,9 +12,25 @@ export class Recorder {
   }
 
   // Ask for the mic early (during think time) so the permission prompt
-  // doesn't eat into the answer.
+  // doesn't eat into the answer. Throws a typed error on failure.
   async prepare() {
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const e = new Error('Microphone not supported in this browser.');
+      e.kind = 'mic-browser';
+      throw e;
+    }
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (raw) {
+      const kind =
+        raw.name === 'NotAllowedError'  ? 'mic-denied'    :
+        raw.name === 'NotFoundError'    ? 'mic-not-found' :
+        raw.name === 'NotReadableError' ? 'mic-in-use'    :
+        'mic-other';
+      const e = new Error(raw.message || raw.name);
+      e.kind = kind;
+      throw e;
+    }
   }
 
   start({ onLevel } = {}) {

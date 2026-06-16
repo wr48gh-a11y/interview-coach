@@ -2,7 +2,7 @@
 // between answers (like the real thing), then one combined readiness report.
 // Each answer is also saved as a normal session so it shows in history.
 
-import { el, esc, toast, fmtClock, countFillers, hashQuestion } from '../ui.js';
+import { el, esc, toast, fmtClock, countFillers, hashQuestion, showError } from '../ui.js';
 import { saveSession, saveAudio, getSettings } from '../store.js';
 import { chatJSON } from '../llm.js';
 import { gradePrompts, CATEGORIES } from '../prompts.js';
@@ -60,8 +60,15 @@ async function runQuestion(root, slate, i, results, mockId) {
   `);
 
   rec = new Recorder();
-  const micReady = await rec.prepare().then(() => true).catch(() => false);
-  if (!micReady) { rec?.dispose(); rec = null; return typed(root, slate, i, results, mockId, item); }
+  let micErr = null;
+  const micReady = await rec.prepare().then(() => true).catch(e => { micErr = e; return false; });
+  if (!micReady) {
+    rec?.dispose(); rec = null;
+    showError(micErr || { kind: 'mic-other' }, [
+      { id: 'type', label: 'Type my answer instead', fn: () => typed(root, slate, i, results, mockId, item) },
+    ]);
+    return;
+  }
 
   const levels = [];
   let lastPush = 0;
@@ -156,7 +163,7 @@ async function advance(root, slate, i, results, mockId, item, ans) {
     if (ans.blob && ans.blob.size) await saveAudio(session.id, ans.blob);
     results.push(session);
   } catch (e) {
-    toast(`Couldn't grade that one (${e.message})`, 'err');
+    showError(e);
     results.push({ question: item.q, attribute: item.attribute, score: null });
   }
 

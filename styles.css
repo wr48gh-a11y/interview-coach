@@ -916,3 +916,26 @@ details summary::-webkit-details-marker { display: none; }
 }
 .warmup-recap-q { font-size: 12px; font-weight: 650; color: var(--text-3); }
 .warmup-recap-word { font-size: 13.5px; font-weight: 650; color: var(--accent); }
+
+/* ---------- error overlay ---------- */
+
+.err-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.38);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: fadeIn .18s ease;
+}
+.err-modal {
+  max-width: 400px; width: 100%;
+  padding: 32px 28px 24px;
+  border-radius: var(--r-lg);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.err-icon { font-size: 36px; line-height: 1; margin-bottom: 2px; }
+.err-title { font-size: 18px; font-weight: 700; }
+.err-fix { font-size: 14.5px; color: var(--text-2); line-height: 1.55; max-width: 320px; }
+.err-raw { font-size: 12px; color: var(--text-3); font-family: monospace; max-width: 320px; word-break: break-all; }
+.err-actions { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
